@@ -1,0 +1,3 @@
+void func(){
+  String a;
+}
