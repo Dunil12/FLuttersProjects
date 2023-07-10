@@ -1,0 +1,213 @@
+			Dart:
+
+Переменные верхнеуровневые, которые объявляются вне класса или функции, инициализируются
+при первом их использовании в коде
+Для переменных класса, инициализация происходит при первом использовании переменной 
+внутри класса или при создании экземпляра класса.
+
+Static:	 Статические переменные существуют независимо от экземпляров класса и доступны напрямую через класс
+Late:    При создании экземпляра класса переменная late не инициализируется автоматически
+
+ВСЕ РАДИ ПРОИЗВОДИТЕЛЬНОСТИ  
+
+
+
+create command line app
+
+в enum {} объекты имеют индексы
+
+...items_in_list - расширение списка (полезно для добавления в коллекцию элементов другой колл-ции)
+
+var - удобвство и читаемость кода (но изменяемость)
+final - значение известно на момент выполнения программы и не может быть изменено
+const - значение перем известно на этапе компиляции и не может быть изменено
+
+-все имена начинающ с _ идентифицируются как приватные,  то есть, если какую либо переменную нужно использовать
+только в данном классе, лучше ее обозначить "_var"
+
+
+			Flutter:
+
+-const MyApp({super.key}); - у stl виджета есть конструткор с типом Key для идентификации виджета в дереве виджетов
+-MyClass<Parametr1, Parametr2>
+-MaterialApp - виджет (отправная точка), соединяет комбинацию виджетов в реальное приложение
+ а/т отвечает за навигацию в приложении
+-Scaffold - разработан для контейнера в котором помещаются все виджеты
+-@override - переопределение 
+-у всех виджетов есть метод build (метод сборки) (кроме statefullwidget)- 
+получается вложение методов сборки, которые вызываются последовательно
+
+
+-setState() вызывает метод build (самого первого виджета), который перерисовывает
+
+-виджеты делятся на: 
+видимые(для вывода информации)
+невидимые(для размещения видимых виджетов (Layout))
+
+-состояние приложения - любые данные к-рые нужны для восстановления интерфейса в любой момент времени
+
+-у каждого виджета есть свой context 
+
+
+
+
+
+
+
+			BLoC на Flutter Bloc
+
+-BLoC не должен знать про пользовательский интефейс и наоборот.
+-BlocBuilder обрабатывает создание виджета в ответ на новые состояния
+(т.е. если изменилось состояние у например AnimatedContainer, то вызвался BlocBuilder и перестроил виджет под новое состояние)
+-BlocBuilder перестраивает виджеты методом builder в зависимости от пришедшего состояния
+
+-Репозиторий - оболочка вокруг UserProvider (чтобы напрямую не работать с API данного класса, мы обернем его в репозиторий, 
+и через него будем обращаться к API этого класса)
+
+
+
+
+			BLOC With DATA
+сначал UI:
+pages => (home_page.dart)
+widgets => (action_buttons.dart, ...) 
+
+затем DATA:
+model => (user.dart)
+services => (user_api_provider.dart, user_repository.dart)
+
+затем BLOC:
+bloc => (user_event.dart, user_state.dart, user_bloc.dart)
+
+Затем:
+обернуть в BlocProvider, создать переменную _bloc, добавить к кнопкам События, 
+BlocBuilder(builder: (context, state) {if..., if..., return SizedBox.shrink();})
+
+
+-JSON 
+state.loadedUser[index].id - обращение к id 
+
+
+
+
+			Чистая Архитектура
+
+-не о поведении приложения, а об легкой изменяемости 
+(для дальнейшего внедрения сервисов)
+
+-разделение на слои(которые имеют связи между собой)
+
+
+
+
+
+
+
+			практика (Структура приложения "Rick and Morty")
+
+- pre
+- Domain - не зависит от других уровней 
+(ей все равно, если перейти с fireBase на restApi, например)
+- Data
+
+
+		Сначала:
+	Domain
+1) domain => entities => person_entities.dart 
+Реализуем там грубо говоря модель (сущность) то есть класс PersonEntity с полями
+-id
+-name
+...
+
+2) domain => person_repository.dart
+repository принадлежит как домену так и уровню данных (его определние находится в 
+домене (он же контракт, он же в dart - асбтрактный класс), а реализация в дата)
+Реализуем репозиторий для того чтобы domain был полностью независим
+
+abstract class PersonRepository{
+  Future<Either<Failure, List<PersonEntity>>> getAllPersons(int page); // в зависимости от страницы, разные персы
+  Future<Either<Failure, List<PersonEntity>>> searchPerson(String query);} // query - name
+Создаем файл failure.dart , где создадим абс класс для вылавливания ошибок сразу(которые не связаны с корректной работой самой прог)
+
+3) usecases => (get_all_persons.dart, search_person.dart), 
+место где выполняется бизнес-логика
+
+
+
+
+ПЛЮСЫ:
+-тестируемость
+-независимость от UI (можно легко изменить пользов интерфейс)
+-независимость от бд
+-независимость от внешних сервисов
+-независимость от фреймворка (фреймворк - инструмент)
+
+ПРИНЦИПЫ:
+-Внешние слои зависят от внутренних слоев
+
+РАЗОБРАТЬ
+
+
+
+
+
+
+
+
+
+
+
+
+CharacterBloc characterBloc = CharacterBloc();
+characterBloc.add(CharacterEvent.fetch(name: value, page: _currentPage));
+
+ЭКВИВАЛЕНТНО 
+
+context.read<CharacterBloc>().add(CharacterEvent.fetch(name: value, page: _currentPage));
+
+Отслеживание событий и ошибок:
+
+bloc_observable.dart =>
+class CharacterBlocObservable extends BlocObserver {
+  @override
+  void onEvent(Bloc bloc, Object? event) {
+    super.onEvent(bloc, event);
+    log('onEvent -- bloc: ${bloc.runtimeType}, event: $event');
+  }
+
+  @override
+  void onError(BlocBase bloc, Object error, StackTrace stackTrace) {
+    super.onError(bloc, error, stackTrace);
+    log('onError -- bloc: ${bloc.runtimeType}, error: $error');
+  }
+}
+
+bloc.dart => 
+try{...}
+catch(_){
+  //  можно у запроса сделать таймаут 
+  //Character characterLoaded = await characterRepo
+  //          .getCharacter(event.page, event.name)
+  //          .timeout(const Duration(seconds: 5));
+  emit(ErrorState);
+  rethrow
+}
+
+main.dart =>
+  // Bloc.observer = CharacterBlocObservable();
+  // runApp(
+  //   const MyApp(),
+  // );
+
+
+
+
+
+
+
+
+			FIREBASE
+
+Firebase - удаленный сервер с большой функциональностью
+
+
